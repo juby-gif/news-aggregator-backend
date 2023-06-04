@@ -175,7 +175,7 @@ class AuthController extends Controller
      *
      * @param  array  $data
      * @param  string  $token
-     * @param  int  $expiration
+     * @param  Carbon  $expiration
      * @param  string  $refreshToken
      * @return \App\Models\User
      */
