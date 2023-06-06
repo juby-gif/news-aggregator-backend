@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('preference_id')->nullable()->constrained('preferences');
             $table->string('name');
             $table->string('email')->unique();
             $table->string('password');

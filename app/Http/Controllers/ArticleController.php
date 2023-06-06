@@ -15,11 +15,6 @@ class ArticleController extends Controller
         $this->initializeApiClients();
     }
 
-    /**
-     * Initialize the API clients with their respective configurations.
-     *
-     * FYI: API Keys were added publicly for test purpose only
-    */
     private function initializeApiClients()
     {
         $this->apiClients = [
@@ -48,56 +43,25 @@ class ArticleController extends Controller
         ];
     }
 
-    /**
-     * Fetch articles based on the provided keyword and filters.
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-    */
     public function fetchArticles(Request $request)
     {
-        $keyword = $request->input('keyword');
-        $filters = $this->extractFilters($request);
+        $keywords = explode(',', $request->input('keyword'));
 
-        $articles = $this->getCachedArticles($keyword, $filters);
+        $articles = $this->getCachedArticles($keywords);
 
         return response()->json($articles);
     }
 
-    /**
-     * Extract filters (date, category, source) from the request parameters.
-     *
-     * @param Request $request
-     * @return array
-    */
-    private function extractFilters(Request $request)
-    {
-        $filters = [];
-
-        foreach (['date', 'category', 'source'] as $filter) {
-            if ($request->has($filter)) {
-                $filters[$filter] = $request->input($filter);
-            }
-        }
-
-        return $filters;
-    }
-
-    /**
-     * Get the articles from the cache or make an API request if not cached.
-     *
-     * @param string $keyword
-     * @param array $filters
-     * @return array
-    */
-    private function getCachedArticles(string $keyword, array $filters)
+    private function getCachedArticles(array $keywords)
     {
         $articles = [];
 
         foreach ($this->apiClients as $service => $apiClient) {
-            $cacheKey = $this->generateCacheKey($service, $keyword, $filters);
-            $articles[$service] = Cache::remember($cacheKey, $apiClient['cache_expiration'], function () use ($apiClient, $keyword, $filters, $service) {
-                $response = $this->makeApiRequest($apiClient, $keyword, $filters);
+            $articles[$service] = [];
+
+            $cacheKey = $this->generateCacheKey($service, implode('_', $keywords));
+            $articles[$service] = Cache::remember($cacheKey, $apiClient['cache_expiration'], function () use ($apiClient, $keywords, $service) {
+                $response = $this->makeApiRequest($apiClient, $keywords);
                 return $this->processApiResponse($response, $service);
             });
         }
@@ -105,38 +69,17 @@ class ArticleController extends Controller
         return $articles;
     }
 
-    /**
-     * Generate a cache key for the given service, keyword, and filters.
-     *
-     * @param string $service
-     * @param string $keyword
-     * @param array $filters
-     * @return string
-     */
-    private function generateCacheKey(string $service, string $keyword, array $filters)
+
+    private function generateCacheKey(string $service, string $keyword)
     {
-        $filterString = implode('_', $filters);
-        return "{$service}_{$keyword}_{$filterString}";
+        return "{$service}_{$keyword}";
     }
 
-    /**
-     * Make an API request to the specified service with the provided keyword and filters.
-     *
-     * @param array $apiClient
-     * @param string $keyword
-     * @param array $filters
-     * @return array
-    */
-    private function makeApiRequest(array $apiClient, string $keyword, array $filters)
+    private function makeApiRequest(array $apiClient, array $keywords)
     {
         $queryParams = [
-            'q' => $keyword,
+            'q' => implode(' ', $keywords),
         ];
-
-        // Add filters to query parameters if provided
-        foreach ($filters as $filter => $value) {
-            $queryParams[$filter] = $value;
-        }
 
         $queryParams[$apiClient['api_key_param']] = $apiClient['api_key'];
 
@@ -149,13 +92,6 @@ class ArticleController extends Controller
         return json_decode($response->getBody(), true);
     }
 
-    /**
-     * Process the API response based on the service.
-     *
-     * @param array $response
-     * @param string $service
-     * @return array
-    */
     private function processApiResponse(array $response, string $service)
     {
         // You can process and manipulate the articles data based on the service

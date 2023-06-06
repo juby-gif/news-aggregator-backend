@@ -49,7 +49,7 @@ class AuthController extends Controller
 
             return response()->json([
                 'user' => $user,
-                'message' => 'Successfully Logged In'
+                'message' => 'Login Successful'
             ]);
         } catch (ValidationException $exception) {
             return response()->json(['message' => $exception->getMessage()], 401);
@@ -120,10 +120,8 @@ class AuthController extends Controller
         $user = $this->createUser($validatedData, $token, $expiration, $refreshToken);
 
         return response()->json([
-            'message' => 'Registration successful',
-            'token' => $token,
-            'token_expires_at' => $expiration,
-            'refresh_token' => $refreshToken,
+            'user' => $user,
+            'message' => 'Registration Successful'
         ]);
     }
 

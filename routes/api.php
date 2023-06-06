@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\NewsFeedController;
 
 /*
 |--------------------------------------------------------------------------
@@ -17,11 +18,16 @@ use App\Http\Controllers\ArticleController;
 */
 
 // Public routes
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/register', [AuthController::class, 'register']);
-Route::get('/articles', [ArticleController::class, 'fetchArticles']);
+Route::post('/login', [AuthController::class, 'login'])->name('login');
+Route::post('/register', [AuthController::class, 'register'])->name('register');
+Route::get('/articles', [ArticleController::class, 'fetchArticles'])->name('articles');
 
-// Protected routes
-Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/logout', [AuthController::class, 'logout']);
+/// Protected routes
+Route::middleware('auth.api')->group(function () {
+    Route::get('/preferences', [NewsFeedController::class, 'showNewsFeed'])->name('preferences');
+    Route::post('/preferences/update', [NewsFeedController::class, 'updatePreferences'])->name('preferences.update');
+    Route::post('/preferences/create', [NewsFeedController::class, 'createPreferences'])->name('preferences.create');
+    Route::delete('/preferences/delete', [NewsFeedController::class, 'deletePreferences'])->name('preferences.delete');
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
+
